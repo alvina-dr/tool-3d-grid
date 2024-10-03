@@ -22,6 +22,7 @@ public class Tool3DGrid_EditorWindow : EditorWindow
 
     public void CreateGUI()
     {
+        CurrentObject = null;
         // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
 
@@ -58,7 +59,7 @@ public class Tool3DGrid_EditorWindow : EditorWindow
     void SceneGUI(SceneView sceneView)
     {
         Event cur = Event.current;
-        if (cur.type == EventType.MouseDown && !cur.IsRightMouseButton())
+        if (cur.type == EventType.MouseDown && cur.button == 0)
         {
             Build();
         }
@@ -74,7 +75,7 @@ public class Tool3DGrid_EditorWindow : EditorWindow
 
             if (Physics.Raycast(ray, out hit))
             {
-                buildPoint = hit.point;
+                buildPoint = new Vector3(hit.point.x - Mathf.Sign(ray.direction.x) * .1f, hit.point.y - Mathf.Sign(ray.direction.y) * .1f, hit.point.z - Mathf.Sign(ray.direction.z) * .1f);
             } 
             else
             {
@@ -87,8 +88,7 @@ public class Tool3DGrid_EditorWindow : EditorWindow
                 }
             }
             GameObject _object = (GameObject) PrefabUtility.InstantiatePrefab(CurrentObject);
-            _object.transform.position = buildPoint;
-            Debug.Log(buildPoint);
+            _object.transform.position = new Vector3(Mathf.Round(buildPoint.x + 0.5f) - 0.5f, Mathf.Round(buildPoint.y - 0.5F) + 0.5f, Mathf.Round(buildPoint.z - 0.5f) + 0.5f);
         }
     }
 }
