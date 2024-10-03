@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
-using Unity.VisualScripting;
+using System.Collections.Generic;
 
 public class Tool3DGrid_EditorWindow : EditorWindow
 {
@@ -12,6 +12,10 @@ public class Tool3DGrid_EditorWindow : EditorWindow
     public GameObject test;
     private GameObject CurrentObject;
     private ObjectField CurrentObjectField;
+    private Tool3DGrid_Tilemap CurrentTilemap;
+    private ObjectField CurrentTilemapField;
+
+    private List<VisualElement> gridButtonList = new List<VisualElement>();
 
     [MenuItem("Window/UI Toolkit/Tool3DGrid_EditorWindow")]
     public static void ShowExample()
@@ -23,12 +27,9 @@ public class Tool3DGrid_EditorWindow : EditorWindow
     public void CreateGUI()
     {
         CurrentObject = null;
+
         // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
-
-        // VisualElements objects can contain other VisualElement following a tree hierarchy.
-        VisualElement label = new Label("Hello World! From C#");
-        root.Add(label);
 
         _editionMod = (DropdownField)rootVisualElement.Query("editionMod").First();
 
@@ -36,7 +37,7 @@ public class Tool3DGrid_EditorWindow : EditorWindow
         VisualElement labelFromUXML = m_VisualTreeAsset.Instantiate();
         root.Add(labelFromUXML);
 
-        var CurrentObjectField = new ObjectField();
+        CurrentObjectField = new ObjectField();
         CurrentObjectField.objectType = typeof(GameObject);
         CurrentObjectField.allowSceneObjects = false;
         CurrentObjectField.label = "Select an object:";
@@ -47,8 +48,24 @@ public class Tool3DGrid_EditorWindow : EditorWindow
             if (evt.newValue == null) CurrentObject = null;
             else CurrentObject = (GameObject) evt.newValue;
         });
+
         root.Add(CurrentObjectField);
 
+        CurrentTilemapField = new ObjectField();
+        CurrentTilemapField.objectType = typeof(Tool3DGrid_Tilemap);
+        CurrentTilemapField.allowSceneObjects = false;
+        CurrentTilemapField.label = "Select an object:";
+
+        CurrentTilemapField.RegisterValueChangedCallback(
+        evt =>
+        {
+            if (evt.newValue == null) CurrentObject = null;
+            else CurrentTilemap = (Tool3DGrid_Tilemap)evt.newValue;
+            //generate ui depending on new tilemap
+            GenerateTilemapMenu();
+        });
+
+        root.Add(CurrentTilemapField);
     }
 
     void OnEnable()
@@ -84,11 +101,28 @@ public class Tool3DGrid_EditorWindow : EditorWindow
                 if (hPlane.Raycast(ray, out distance))
                 {
                     // get the hit point:
-                    buildPoint = ray.GetPoint(distance);
+                    buildPoint = ray.GetPoint(distance) + new Vector3(0, .1f, 0);
                 }
             }
             GameObject _object = (GameObject) PrefabUtility.InstantiatePrefab(CurrentObject);
             _object.transform.position = new Vector3(Mathf.Round(buildPoint.x + 0.5f) - 0.5f, Mathf.Round(buildPoint.y - 0.5F) + 0.5f, Mathf.Round(buildPoint.z - 0.5f) + 0.5f);
+        }
+    }
+
+    public void GenerateTilemapMenu()
+    {
+        for (int i = 0; i < gridButtonList.Count; i++)
+        {
+            rootVisualElement.Remove(gridButtonList[i]);
+        }
+        gridButtonList.Clear();
+        for (int i = 0; i < CurrentTilemap.TileList.Count; i++)
+        {
+            int index = i;
+            VisualElement _blockButton = new Button(() => { CurrentObject = CurrentTilemap.TileList[index]; }) { text = CurrentTilemap.TileList[i].name };
+            //CurrentTilemap.TileList[i]
+            rootVisualElement.Add(_blockButton);
+            gridButtonList.Add(_blockButton);
         }
     }
 }
