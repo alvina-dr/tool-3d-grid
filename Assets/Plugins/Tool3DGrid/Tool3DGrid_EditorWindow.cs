@@ -3,15 +3,16 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using System.Collections.Generic;
+using System.IO;
 
 public class Tool3DGrid_EditorWindow : EditorWindow
 {
     [SerializeField]
     private VisualTreeAsset m_VisualTreeAsset = default;
     private DropdownField _editionMod;
+    private GroupBox _gridGroupBox;
     public GameObject test;
     private GameObject CurrentObject;
-    private ObjectField CurrentObjectField;
     private Tool3DGrid_Tilemap CurrentTilemap;
     private ObjectField CurrentTilemapField;
 
@@ -36,20 +37,6 @@ public class Tool3DGrid_EditorWindow : EditorWindow
         // Instantiate UXML
         VisualElement labelFromUXML = m_VisualTreeAsset.Instantiate();
         root.Add(labelFromUXML);
-
-        CurrentObjectField = new ObjectField();
-        CurrentObjectField.objectType = typeof(GameObject);
-        CurrentObjectField.allowSceneObjects = false;
-        CurrentObjectField.label = "Select an object:";
-
-        CurrentObjectField.RegisterValueChangedCallback(
-        evt =>
-        {
-            if (evt.newValue == null) CurrentObject = null;
-            else CurrentObject = (GameObject) evt.newValue;
-        });
-
-        root.Add(CurrentObjectField);
 
         CurrentTilemapField = new ObjectField();
         CurrentTilemapField.objectType = typeof(Tool3DGrid_Tilemap);
@@ -111,6 +98,11 @@ public class Tool3DGrid_EditorWindow : EditorWindow
 
     public void GenerateTilemapMenu()
     {
+        if (_gridGroupBox != null) _gridGroupBox.RemoveFromHierarchy();
+        _gridGroupBox = new GroupBox();
+        _gridGroupBox.style.flexDirection = FlexDirection.Row;
+        _gridGroupBox.style.flexWrap = Wrap.Wrap;
+
         for (int i = 0; i < gridButtonList.Count; i++)
         {
             rootVisualElement.Remove(gridButtonList[i]);
@@ -119,10 +111,13 @@ public class Tool3DGrid_EditorWindow : EditorWindow
         for (int i = 0; i < CurrentTilemap.TileList.Count; i++)
         {
             int index = i;
-            VisualElement _blockButton = new Button(() => { CurrentObject = CurrentTilemap.TileList[index]; }) { text = CurrentTilemap.TileList[i].name };
-            //CurrentTilemap.TileList[i]
-            rootVisualElement.Add(_blockButton);
+            var editor = UnityEditor.Editor.CreateEditor(CurrentTilemap.TileList[index]);
+            Texture2D tex = editor.RenderStaticPreview(AssetDatabase.GetAssetPath(CurrentTilemap.TileList[index]), null, 100, 100);
+            VisualElement _blockButton = new Button(() => { CurrentObject = CurrentTilemap.TileList[index]; }) { iconImage =  tex};
+            _gridGroupBox.Add(_blockButton);
             gridButtonList.Add(_blockButton);
         }
+
+        rootVisualElement.Add(_gridGroupBox);
     }
 }
