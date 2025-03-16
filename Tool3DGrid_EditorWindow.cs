@@ -395,7 +395,6 @@ public class Tool3DGrid_EditorWindow : EditorWindow
             Undo.RegisterCreatedObjectUndo(CurrentPreviewObjectList[i], "Created go");
         }
         CurrentPreviewObjectList.Clear();
-        Tools.current = Tool.None;
         return;
     }
 
