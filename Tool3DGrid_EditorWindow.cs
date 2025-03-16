@@ -390,10 +390,17 @@ public class Tool3DGrid_EditorWindow : EditorWindow
 
         for (int i = 0; i < CurrentPreviewObjectList.Count; i++)
         {
-            SetGameLayerRecursive(CurrentPreviewObjectList[i], LayerMask.NameToLayer("Default"));
-            CurrentPreviewObjectList[i].transform.parent = CurrentBuildParent;
-            Undo.RegisterCreatedObjectUndo(CurrentPreviewObjectList[i], "Created go");
+
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(CurrentObject);
+            instance.transform.position = CurrentPreviewObjectList[i].transform.position;
+            instance.transform.eulerAngles = new Vector3(instance.transform.eulerAngles.x, CurrentRotationY, instance.transform.eulerAngles.z);
+            instance.transform.parent = CurrentBuildParent;
+         
+            DestroyImmediate(CurrentPreviewObjectList[i].gameObject);
+
+            Undo.RegisterCreatedObjectUndo(instance, "Created go");
         }
+
         CurrentPreviewObjectList.Clear();
         return;
     }
@@ -425,7 +432,9 @@ public class Tool3DGrid_EditorWindow : EditorWindow
         Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, _layerMask))
         {
-            buildPoint = new Vector3(hit.point.x - Mathf.Sign(ray.direction.x) * .1f, hit.point.y - Mathf.Sign(ray.direction.y) * .1f, hit.point.z - Mathf.Sign(ray.direction.z) * .1f); // Collision point
+            buildPoint = new Vector3(hit.point.x - Mathf.Sign(ray.direction.x) * .1f,
+                hit.point.y - Mathf.Sign(ray.direction.y) * .1f,
+                hit.point.z - Mathf.Sign(ray.direction.z) * .1f); // Collision point
         }
         else
         {
@@ -439,13 +448,17 @@ public class Tool3DGrid_EditorWindow : EditorWindow
 
         if (CurrentPreviewObject != null) // If the object prefab is already instantiated for the preview, it moves with the cursor
         {
-            CurrentPreviewObject.transform.position = new Vector3(Mathf.Round(buildPoint.x + 0.5f) - 0.5f, Mathf.Round(buildPoint.y - 0.5F), Mathf.Round(buildPoint.z - 0.5f) + 0.5f);
+            CurrentPreviewObject.transform.position = new Vector3(Mathf.Round(buildPoint.x + 0.5f) - 0.5f,
+                Mathf.Round(buildPoint.y - 0.5F),
+                Mathf.Round(buildPoint.z - 0.5f) + 0.5f);
         }
         else // Instantiates the object prefab once for the preview
         {
             CurrentPreviewObject = (GameObject)PrefabUtility.InstantiatePrefab(CurrentObject);
-            SetGameLayerRecursive(CurrentPreviewObject, LayerMask.NameToLayer("Ignore Raycast")); // Set the layer of the preview object to "Ignore Raycast" to avoid colliding with itself
-            CurrentPreviewObject.transform.position = new Vector3(Mathf.Round(buildPoint.x + 0.5f) - 0.5f, Mathf.Round(buildPoint.y - 0.5F), Mathf.Round(buildPoint.z - 0.5f) + 0.5f);
+            SetGameLayerRecursive(CurrentPreviewObject, LayerMask.NameToLayer("Ignore Raycast")); // Set the layer of the preview object to "Ignore Raycast" to avoid self-collision
+            CurrentPreviewObject.transform.position = new Vector3(Mathf.Round(buildPoint.x + 0.5f) - 0.5f,
+                Mathf.Round(buildPoint.y - 0.5F),
+                Mathf.Round(buildPoint.z - 0.5f) + 0.5f);
         }
     }
 
